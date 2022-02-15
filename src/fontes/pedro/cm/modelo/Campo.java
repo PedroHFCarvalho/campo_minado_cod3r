@@ -1,0 +1,143 @@
+package fontes.pedro.cm.modelo;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Campo {
+
+	private final int linha;
+	private final int coluna;
+
+	private boolean minado;
+	private boolean aberto;
+	private boolean marcado;
+
+	private List<Campo> vizinhos = new ArrayList<>();
+	private List<CampoObservador> observadores = new ArrayList<>();
+
+	Campo(int linha, int coluna) {
+		this.linha = linha;
+		this.coluna = coluna;
+	}
+
+	public void registarObservador(CampoObservador observador) {
+		observadores.add(observador);
+	}
+
+	private void notificarObservadores(CampoEvento evento) {
+		observadores.stream().forEach(obser -> obser.eventoOcorreu(this, evento));
+	}
+
+	boolean adicionarVizinho(Campo vizinho) {
+		boolean linhaDiferente = this.linha != vizinho.linha;
+		boolean colunaDiferente = this.coluna != vizinho.coluna;
+		boolean diagonal = linhaDiferente && colunaDiferente;
+
+		int deltaLinha = Math.abs(this.linha - vizinho.linha);
+		int deltaColuna = Math.abs(this.coluna - vizinho.coluna);
+		int deltaGeral = deltaColuna + deltaLinha;
+
+		if (deltaGeral == 1 && !diagonal) {
+			vizinhos.add(vizinho);
+			return true;
+		} else if (deltaGeral == 2 && diagonal) {
+			vizinhos.add(vizinho);
+			return true;
+		} else {
+			return false;
+		}
+
+	}
+
+	public void alternarMarcacao() {
+		if (!aberto) {
+			marcado = !marcado;
+
+			if (marcado) {
+				notificarObservadores(CampoEvento.MARCAR);
+			} else {
+				notificarObservadores(CampoEvento.DESMARCAR);
+			}
+		}
+	}
+
+	public boolean abrir() {
+
+		if (!aberto && !marcado) {
+
+			if (minado) {
+				notificarObservadores(CampoEvento.EXPLODIR);
+				return true;
+			}
+			setAberto(true);
+
+			if (vizinhancaSegura()) {
+				vizinhos.forEach(v -> v.abrir());
+			}
+
+			return true;
+		} else {
+			return false;
+		}
+
+	}
+
+	public boolean vizinhancaSegura() {
+		return vizinhos.stream().noneMatch(v -> v.minado);
+	}
+
+	void minar() {
+		this.minado = true;
+
+	}
+
+	public boolean isMarcado() {
+		return marcado;
+	}
+
+	void setAberto(boolean aberto) {
+		this.aberto = aberto;
+
+		if (aberto) {
+			notificarObservadores(CampoEvento.ABRIR);
+		}
+	}
+
+	public boolean isAberto() {
+		return aberto;
+	}
+
+	public boolean isFechado() {
+		return !aberto;
+	}
+
+	public boolean isMinado() {
+		return minado;
+	}
+
+	public int getLinha() {
+		return linha;
+	}
+
+	public int getColuna() {
+		return coluna;
+	}
+
+	boolean objetivoAlcancado() {
+		boolean desvendado = !minado && aberto;
+		boolean protegido = minado && marcado;
+		return desvendado || protegido;
+	}
+
+	public int minasNaVizinhanca() {
+		return (int) vizinhos.stream().filter(v -> v.minado).count();
+	}
+
+	void reinicar() {
+		aberto = false;
+		minado = false;
+		marcado = false;
+		notificarObservadores(CampoEvento.REINICIAR);
+	}
+
+}
