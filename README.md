@@ -5,4 +5,4 @@ Projeto em Java feito durante o curso da cod3r,
 Front feito em Swing
 
 Contesto:
-Re-criaçao do jogo classico Campo Minado
+Re-criação do jogo clássico Campo Minado
